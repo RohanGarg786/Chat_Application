@@ -7,7 +7,7 @@ import { GlobalStateContext } from '../ContextApi/GlobalStateProvide';
 
 const Register = () => {
     const [name,setName] = React.useState<string>("");
-    const [email,setEmail] =React.useState<string>("");
+    const [phone,setPhone] =React.useState<string>("");
     // const [avatar,setAvatar] = React.useState<string>("");
     const [password,setPassword] = React.useState<string>("");
 
@@ -38,8 +38,9 @@ const Register = () => {
         Reader.readAsDataURL(file);
       }
 
-      const submitHandler = async ()=>{
-        await axios.post("/api/v1/register",{name,email,password,avatar},{
+      const submitHandler = async (e:any)=>{
+        e.preventDefault();
+        await axios.post("http://localhost:8000/api/v1/user/register",{name,phone,password,avatar},{
             headers:{
                 'Content-Type' : "application/json"
             }
@@ -59,7 +60,7 @@ const Register = () => {
 
             <input type='text' className='registerInputs' placeholder='Name' required value={name} onChange={(e)=>setName(e.target.value)}/>
 
-            <input type='email' className='registerInputs' placeholder='Email' required value={email} onChange={(e)=>setEmail(e.target.value)}/>
+            <input type='phone' className='registerInputs' placeholder='phone' required value={phone} onChange={(e)=>setPhone(e.target.value)}/>
 
             <input type="password" className='registerInputs' placeholder='Password' required value={password} onChange={(e)=>setPassword(e.target.value)}/>
 

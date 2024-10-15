@@ -1,4 +1,4 @@
-import  { useContext } from 'react'
+import  { useContext, useEffect, useState } from 'react'
 import './Home.css'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import { Avatar } from '@mui/material'
@@ -9,8 +9,23 @@ import InsertEmoticonIcon from '@mui/icons-material/InsertEmoticon';
 import AddIcon from '@mui/icons-material/Add';
 import MicIcon from '@mui/icons-material/Mic';
 import AddCommentIcon from '@mui/icons-material/AddComment';
+import SendIcon from '@mui/icons-material/Send';
+import axios from 'axios'
 
 const Home = () => {
+
+    const [message , setMessage] =useState("")
+    const [user , setUser] = useState({})
+
+    useEffect(()=>{
+      const fetchData = async ()=>{
+        const data = await axios.get('http://localhost:8000/api/v1/user');
+        console.log(data)
+        setUser(data.data)
+      }  
+      fetchData();
+    },[])
+
     const context = useContext(GlobalStateContext);
     if (!context) {
         throw new Error("useGlobalState must be used within a GlobalStateProvider");
@@ -44,7 +59,7 @@ const Home = () => {
            <div className="upperPanel">
                 <div className="upperPanelRight">
                     <Avatar src={avatar} alt='User' sx={{ height: "5vh", width: "5vh" }} />
-                    <h3>User Name</h3>
+                    <h3>User Name </h3>
                 </div>
                 <div className="upperPanelLeft">
                     <DuoIcon color='action' sx={{ height: "4vh", width: "4vh" }}/>
@@ -62,8 +77,17 @@ const Home = () => {
                 <InsertEmoticonIcon sx={{ height: "4vh", width: "4vh" }} className='InsertEmoticonIcon'/>
                 <AddIcon sx={{ height: "4vh", width: "4vh" }} className='AddIcon'/>
                 </div>
-                <input type="text" placeholder='Type a message' />
-                <MicIcon sx={{ height: "4vh", width: "4vh" }} className='MicIcon'/>
+                <input type="text" placeholder='Type a message' value={message} onChange={(e)=>setMessage(e.target.value)}/>
+                {
+                    message === "" ? (
+                        <MicIcon sx={{ height: "4vh", width: "4vh" }} className='MicIcon' />
+                    ) : (
+                        <SendIcon 
+                            sx={{ height: "4vh", width: "4vh" }} 
+                            className='SendIcon'  // Call your send message function on click
+                        />
+                    )
+                }
             </div>
            </div>
         </div>
