@@ -4,6 +4,7 @@ import cors from 'cors';
 import {Server} from 'socket.io';
 import userRouter from './routes/userRoutes';
 import cookieParser from 'cookie-parser'
+import { prisma } from './database/db';
 
 const app = express();
 
@@ -25,6 +26,45 @@ app.use(cookieParser());
 
 io.on("connection",(socket)=>{
     console.log("User Connected", socket.id)
+    socket.on('send-message',async(message,selectedContact)=> {
+        console.log('====================')
+        const isExists = await prisma.meassages.findMany({
+            where: {
+                senderId:selectedContact?.userId,
+                receiverId:selectedContact?.id,
+            }
+        })
+        console.log(isExists, '=================')
+       if(isExists.length == 0) {
+        const result = await prisma.meassages.create({
+            data: {
+                senderId: selectedContact?.userId,
+                receiverId: selectedContact?.id,
+                content: [message],
+            }
+        })
+       }
+       else{
+        let existingContent = isExists[0]?.content;
+  if (typeof existingContent === 'string') {
+    existingContent = [existingContent]; // Convert to an array
+  }
+        const result = await prisma.meassages.update({
+            where: {
+                id: isExists[0]?.id,
+                senderId: selectedContact?.userId,
+                receiverId: selectedContact?.id,
+
+            },
+            data: {
+                content: {
+                    push: message, // Append a single new message
+                  },
+            }
+        })
+       }
+       socket.emit('emit-message',message)
+    })
 });
 
 io.on("disconnect",()=>{

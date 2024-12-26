@@ -1,4 +1,4 @@
-import { Request, Response } from "express"
+import { NextFunction, Request, Response } from "express"
 import { userSchemaValidation } from "../validations/userValidation";
 import { prisma } from "../database/db";
 import { createToken, verifyToken } from "../service/authentication";
@@ -61,13 +61,11 @@ export const loginUserController = async(req:Request, res: Response): Promise<an
         }
 
         const data = req.body;
-console.log("before------------------")
         const user = await prisma.user.findUnique({
             where:{
                 phone: data.phone,
             }
         });
-        console.log("AF/ter=================",user)
 
         if(!user){
             return res.status(400).json({
@@ -75,10 +73,8 @@ console.log("before------------------")
                 message:user
             })
         }
-        console.log("AF/ter++++++++++===================",user)
 
         const newPassword = await bcrypt.compare(data.password,user.password);
-        console.log("Passwowrd=================",newPassword)
 
         if(!newPassword){
             return res.status(400).json({
@@ -86,13 +82,11 @@ console.log("before------------------")
                 error:error
             })
         }
-        console.log("AF/ter-------------------=================")
 
         const token = await createToken(data.phone);
         console.log(token)
         const options ={
             expires:new Date(Date.now()+90*24*60*60*1000),
-            httpOnly:true,
         };
 
         return res.status(201).cookie("token",token,options).json({
@@ -133,5 +127,106 @@ export const userDetailsController = async (req:Request, res: Response):Promise<
         }
     } else {
         return res.status(401).json({ message: "Invalid token" });
+    }
+}
+
+export const isAutheticated =async(req: Request, res: Response,next: NextFunction): Promise<any>=>{
+    const {token} = req.cookies;
+    if(!token){
+        return res.status(401).json({
+            message:"Please login first",
+        });
+    }
+    next();
+}
+
+export const addNewContact = async (req: any, res: any) => {
+    try {
+        const data = req.body
+        const userId = req.params.userId
+        const isPhoneExists = await prisma.user.findUnique({
+            where: {
+                phone: data?.phone
+            }
+        })
+        if(!isPhoneExists){
+            return res.status(400).send('This Phone Number does not have account on our application.')
+        }
+        const userFind = await prisma.userContacts.create({
+            data :{
+                id: isPhoneExists?.id,
+                name: data?.name,
+                phoneNumber: data?.phone,
+                userId: userId,
+            }
+        })
+
+        if(userFind){
+            return res.status(200).json({
+                success: true,
+                message: "New Contact Added Successfully"
+            })
+        }
+        
+        return res.status(400).json({
+            success: false,
+            message: "Unable to add contact"
+        })
+
+        // return res.status(200).json({
+        //     success: true
+        // })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: error
+        })
+    }
+}
+
+export const allContacts = async (req: any, res: any) => {
+    try {
+        const userId = req.params.userId
+        const allContacts = await prisma.userContacts.findMany({
+            where: {
+                userId:userId
+            }
+        })
+        return res.status(200).json({
+            data: allContacts,
+            message: "All contacts Fetched Successfully"
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: error
+        })
+    }
+}
+
+export const allMessages = async (req: any, res: any) => {
+    try {
+        console.log('=========================')
+       const result = await prisma.meassages.findMany({
+            where: {
+                senderId: req.params.senderId,
+                receiverId: req.params.receiverId
+            }
+        })
+
+        console.log(result)
+        console.log('-----------------------------')
+        if(result){
+            return res.status(200).json({
+                data: result
+            })
+        }
+
+        return res.status(404).send('Not Found')
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: error
+        })
     }
 }

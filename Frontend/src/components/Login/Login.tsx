@@ -1,10 +1,10 @@
 import { Button, Typography } from '@mui/material'
 import axios from 'axios';
-import React, { useContext } from 'react'
+import React, { useContext, useEffect } from 'react'
 import { Link, redirect } from 'react-router-dom'
 import './Login.css'
-import Cookies from 'js-cookie';
 import { GlobalStateContext } from '../ContextApi/GlobalStateProvide';
+import Cookies from 'js-cookie';
 
 const Login = () => {
     const [phone,setPhone] =React.useState<string>("");
@@ -16,7 +16,7 @@ const Login = () => {
         throw new Error("useGlobalState must be used within a GlobalStateProvider");
     }
 
-    const {setIsAuthenticated} =context;
+    const {setIsAuthenticated , isAuthenticated, login} =context;
 
     const loginHandler = async (e:any)=>{
         e.preventDefault();
@@ -25,19 +25,26 @@ const Login = () => {
             headers:{
                 'Content-Type':'application/json'
             },
+            withCredentials: true // Allows cookies to be sent and received
         })
         console.log("done")
-        const { token } = response.data;
+        console.log(response.data)
+        // const { token } = response.data;
+
+        const {token} = response.data
         
         if (token) {
             // Set the token in cookies for future requests
-            Cookies.set('token', token, { path: '/', secure: true, sameSite: 'Strict' });
-            setIsAuthenticated(true); // Update your authentication state
+           await setIsAuthenticated(true); // Update your authentication state
+            console.log(isAuthenticated)
             // Redirect the user to the home page
             redirect('../'); // Adjust according to your routing library
         }
 
     }
+    useEffect(() => {
+        console.log("Authentication status changed:", isAuthenticated);
+      }, [isAuthenticated]);
 
   return (
     <div className='login'>
